@@ -5,9 +5,21 @@ import { initDb, pool } from './db.js'
 
 const app = express()
 const port = process.env.PORT || 4000
-const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://localhost:8080')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
 
-app.use(cors({ origin: clientOrigin }))
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+      return
+    }
+
+    callback(new Error('Not allowed by CORS'))
+  },
+}))
 app.use(express.json())
 
 function mapTask(row) {
@@ -48,7 +60,7 @@ app.post('/api/tasks', async (req, res, next) => {
     const { title, subject, dueDate, minutes } = req.body
 
     if (!title || !subject || !dueDate || !Number(minutes)) {
-      return res.status(400).json({ message: '필수 값이 누락되었습니다.' })
+      return res.status(400).json({ message: 'Required fields are missing.' })
     }
 
     const result = await pool.query(
@@ -73,7 +85,7 @@ app.patch('/api/tasks/:id', async (req, res, next) => {
     )
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ message: '계획을 찾을 수 없습니다.' })
+      return res.status(404).json({ message: 'Task not found.' })
     }
 
     res.json({ task: mapTask(result.rows[0]) })
@@ -93,7 +105,7 @@ app.delete('/api/tasks/:id', async (req, res, next) => {
 
 app.use((error, _req, res, _next) => {
   console.error(error)
-  res.status(500).json({ message: '서버 오류가 발생했습니다.' })
+  res.status(500).json({ message: 'Server error.' })
 })
 
 initDb()

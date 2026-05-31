@@ -3,7 +3,6 @@ services:
     name: study-planner
     runtime: node
     plan: free
-    autoDeployTrigger: off
     buildCommand: npm install && npm --prefix client install && npm --prefix client run build && npm --prefix server install
     startCommand: node server/src/index.js
     healthCheckPath: /api/health

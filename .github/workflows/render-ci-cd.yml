@@ -1,4 +1,4 @@
-name: Render CI CD
+name: Render CI
 
 on:
   pull_request:
@@ -42,20 +42,3 @@ jobs:
       - name: Check server syntax
         run: npm run check
         working-directory: server
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Trigger Render deploy
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-            echo "RENDER_DEPLOY_HOOK_URL secret is missing."
-            exit 1
-          fi
-
-          curl --fail --request POST "$RENDER_DEPLOY_HOOK_URL"

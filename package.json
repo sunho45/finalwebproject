@@ -1,0 +1,11 @@
+{
+  "name": "study-planner-finalproject",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "install:all": "npm --prefix client install && npm --prefix server install",
+    "dev": "docker compose up --build",
+    "build": "npm --prefix client run build",
+    "start:server": "npm --prefix server start"
+  }
+}

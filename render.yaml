@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: study-planner-api
+    name: study-planner
     runtime: node
-    rootDir: server
     plan: free
-    buildCommand: npm install
-    startCommand: npm start
+    autoDeployTrigger: off
+    buildCommand: npm install && npm --prefix client install && npm --prefix client run build && npm --prefix server install
+    startCommand: node server/src/index.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
@@ -15,7 +15,7 @@ services:
           name: study-planner-db
           property: connectionString
       - key: CLIENT_ORIGIN
-        sync: false
+        value: https://study-planner.onrender.com
 
 databases:
   - name: study-planner-db

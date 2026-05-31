@@ -1,0 +1,61 @@
+name: Render CI CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install client dependencies
+        run: npm install
+        working-directory: client
+
+      - name: Build client
+        run: npm run build
+        working-directory: client
+
+      - name: Install server dependencies
+        run: npm install
+        working-directory: server
+
+      - name: Check server syntax
+        run: npm run check
+        working-directory: server
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL secret is missing."
+            exit 1
+          fi
+
+          curl --fail --request POST "$RENDER_DEPLOY_HOOK_URL"

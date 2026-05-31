@@ -172,7 +172,7 @@ export default function App() {
               <input type="date" value={draft.dueDate} onChange={(event) => setDraft((prev) => ({ ...prev, dueDate: event.target.value }))} />
             </label>
             <label>
-              시간
+              분
               <input
                 type="number"
                 min="5"

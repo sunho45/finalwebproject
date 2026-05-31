@@ -120,10 +120,7 @@ export default function App() {
       <section className="hero">
         <div>
           <p className="eyebrow">Final Project Planner</p>
-          <h1>공부 계획을 기록하고 완료율을 확인하세요</h1>
-          <p className="intro">
-            계획 데이터는 PostgreSQL에 저장되고, 테마와 필터는 localStorage, 작성 중인 입력값은 sessionStorage에 저장됩니다.
-          </p>
+          <h1>공부계획 기록</h1>
         </div>
 
         <aside className="progress-box" aria-label="완료율">

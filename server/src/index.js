@@ -42,24 +42,17 @@ function mapTask(row) {
 }
 
 function getUserKey(req) {
-  const userKey = req.get('X-Planner-User')?.trim()
+  const userKey = req.get('X-Planner-User')?.trim() || 'default-user'
 
-  if (!userKey || userKey.length > 120) {
-    return null
+  if (userKey.length > 120) {
+    return 'default-user'
   }
 
   return userKey
 }
 
 function requireUser(req, res, next) {
-  const userKey = getUserKey(req)
-
-  if (!userKey) {
-    res.status(400).json({ message: 'User key is required.' })
-    return
-  }
-
-  req.userKey = userKey
+  req.userKey = getUserKey(req)
   next()
 }
 

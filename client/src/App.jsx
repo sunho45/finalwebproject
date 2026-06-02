@@ -50,7 +50,7 @@ function getStoredUserId() {
   try {
     const savedUserId = localStorage.getItem(USER_KEY)
 
-    if (savedUserId) {
+    if (savedUserId && savedUserId.length <= 120) {
       return savedUserId
     }
 
@@ -118,7 +118,7 @@ export default function App() {
       setStats(data.stats)
       setStatus('')
     } catch (error) {
-      setStatus(`DB 연결 또는 테이블 초기화 오류입니다. ${error.message}`)
+      setStatus(`데이터를 불러오지 못했습니다. ${error.message}`)
     }
   }
 

@@ -181,7 +181,7 @@ export default function App() {
           <h1>공부계획 기록</h1>
         </div>
 
-        <aside className="progress-box" aria-label="완료율">
+        <aside className="progress-box" aria-label="오늘 진행률">
           <strong>{todayStats.progress}%</strong>
           <span>오늘의 진행률</span>
           <div className="progress-track">
@@ -242,7 +242,7 @@ export default function App() {
           </div>
 
           <label>
-            기본 집중 시간: {preferences.focusMinutes}분
+            기본 집중 분: {preferences.focusMinutes}분
             <input
               type="range"
               min="10"

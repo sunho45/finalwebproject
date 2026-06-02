@@ -1,15 +1,10 @@
 import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { initDb, pool } from './db.js'
 
 const app = express()
 const port = process.env.API_PORT || process.env.PORT || 4000
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const clientDistPath = path.resolve(__dirname, '../../client/dist')
 const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://localhost:8080')
   .split(',')
   .map((origin) => origin.trim())
@@ -29,7 +24,6 @@ app.use(cors({
   },
 }))
 app.use(express.json())
-app.use(express.static(clientDistPath))
 
 function mapTask(row) {
   return {
@@ -146,17 +140,6 @@ app.delete('/api/tasks/:id', async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-})
-
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    next()
-    return
-  }
-
-  res.sendFile(path.join(clientDistPath, 'index.html'), (error) => {
-    if (error) next(error)
-  })
 })
 
 app.use((error, _req, res, _next) => {

@@ -6,12 +6,12 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     envVars:
-      - key: API_PORT
-        value: 4000
       - key: DATABASE_URL
         fromDatabase:
           name: study-planner-db
           property: connectionString
+      - key: API_PORT
+        value: 4000
       - key: CLIENT_ORIGIN
         value: https://finalwebproject-b4va.onrender.com
 

@@ -15,10 +15,11 @@ ENV API_PORT=4000
 
 COPY server/package*.json ./server/
 RUN npm --prefix server install --omit=dev
-COPY server/src ./server/src
+COPY server ./server
 COPY --from=client-build /app/client/dist ./client/dist
 COPY nginx/render.conf.template /etc/nginx/templates/render.conf.template
 COPY scripts/render-start.sh ./scripts/render-start.sh
+
 RUN chmod +x ./scripts/render-start.sh
 
 EXPOSE 10000

@@ -147,13 +147,14 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ message: 'Server error.' })
 })
 
-initDb()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`Planner API listening on ${port}`)
+app.listen(port, () => {
+  console.log(`Planner API listening on ${port}`)
+
+  initDb()
+    .then(() => {
+      console.log('Database initialized')
     })
-  })
-  .catch((error) => {
-    console.error('Database initialization failed', error)
-    process.exit(1)
-  })
+    .catch((error) => {
+      console.error('Database initialization failed', error)
+    })
+})

@@ -117,7 +117,7 @@ export default function App() {
       setStats(data.stats)
       setStatus('')
     } catch {
-      setStatus('API 서버가 아직 연결되지 않았습니다. docker compose up --build 실행 후 다시 확인하세요.')
+      setStatus('API 서버가 아직 연결되지 않았습니다. 배포 로그와 DATABASE_URL을 확인하세요.')
     }
   }
 

@@ -15,6 +15,7 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http
   .map((origin) => origin.trim())
   .filter(Boolean)
 
+app.disable('x-powered-by')
 app.use(cors({
   origin(origin, callback) {
     const isRenderOrigin = origin?.endsWith('.onrender.com')

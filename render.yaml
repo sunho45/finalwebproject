@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: study-planner
+    name: finalwebproject
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
@@ -13,7 +13,7 @@ services:
           name: study-planner-db
           property: connectionString
       - key: CLIENT_ORIGIN
-        value: https://study-planner.onrender.com
+        value: https://finalwebproject-b4va.onrender.com
 
 databases:
   - name: study-planner-db

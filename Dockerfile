@@ -1,6 +1,6 @@
 FROM node:22-alpine AS client-build
 WORKDIR /app/client
-ARG VITE_API_BASE_URL=/api
+ARG VITE_API_BASE_URL=
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY client/package*.json ./
 RUN npm install

@@ -3,7 +3,18 @@ import { useEffect, useMemo, useState } from 'react'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 const PREFERENCE_KEY = 'study-planner-preferences'
 const DRAFT_KEY = 'study-planner-draft'
-const today = new Date().toISOString().slice(0, 10)
+const USER_KEY = 'study-planner-user'
+
+function getTodayDate() {
+  const date = new Date()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+const today = getTodayDate()
 
 const defaultPreferences = {
   theme: 'light',
@@ -27,12 +38,38 @@ function readStorage(key, fallback, storage = localStorage) {
   }
 }
 
+function createUserId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID()
+  }
+
+  return `user-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function getStoredUserId() {
+  try {
+    const savedUserId = localStorage.getItem(USER_KEY)
+
+    if (savedUserId) {
+      return savedUserId
+    }
+
+    const nextUserId = createUserId()
+    localStorage.setItem(USER_KEY, nextUserId)
+    return nextUserId
+  } catch {
+    return createUserId()
+  }
+}
+
 export default function App() {
   const [tasks, setTasks] = useState([])
   const [stats, setStats] = useState({ total: 0, done: 0, minutes: 0 })
   const [preferences, setPreferences] = useState(() => readStorage(PREFERENCE_KEY, defaultPreferences))
   const [draft, setDraft] = useState(() => readStorage(DRAFT_KEY, defaultDraft, sessionStorage))
   const [status, setStatus] = useState('서버 데이터를 불러오는 중입니다.')
+  const [currentDate, setCurrentDate] = useState(today)
+  const [userId] = useState(getStoredUserId)
 
   useEffect(() => {
     document.documentElement.dataset.theme = preferences.theme
@@ -47,10 +84,22 @@ export default function App() {
     loadTasks()
   }, [])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentDate(getTodayDate())
+    }, 60_000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
   async function api(path, options) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
       ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Planner-User': userId,
+        ...options?.headers,
+      },
     })
 
     if (!response.ok) {
@@ -113,7 +162,16 @@ export default function App() {
     return tasks
   }, [tasks, preferences.filter])
 
-  const progress = stats.total ? Math.round((stats.done / stats.total) * 100) : 0
+  const todayStats = useMemo(() => {
+    const todayTasks = tasks.filter((task) => task.due_date === currentDate)
+    const done = todayTasks.filter((task) => task.done).length
+
+    return {
+      total: todayTasks.length,
+      done,
+      progress: todayTasks.length ? Math.round((done / todayTasks.length) * 100) : 0,
+    }
+  }, [tasks, currentDate])
 
   return (
     <main className="app">
@@ -124,10 +182,10 @@ export default function App() {
         </div>
 
         <aside className="progress-box" aria-label="완료율">
-          <strong>{progress}%</strong>
+          <strong>{todayStats.progress}%</strong>
           <span>오늘의 진행률</span>
           <div className="progress-track">
-            <div style={{ width: `${progress}%` }} />
+            <div style={{ width: `${todayStats.progress}%` }} />
           </div>
         </aside>
       </section>

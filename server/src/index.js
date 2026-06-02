@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { initDb, pool } from './db.js'
 
 const app = express()
-const port = process.env.PORT || 4000
+const port = process.env.API_PORT || process.env.PORT || 4000
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const clientDistPath = path.resolve(__dirname, '../../client/dist')
@@ -37,14 +37,37 @@ function mapTask(row) {
   }
 }
 
-async function getStats() {
+function getUserKey(req) {
+  const userKey = req.get('X-Planner-User')?.trim()
+
+  if (!userKey || userKey.length > 120) {
+    return null
+  }
+
+  return userKey
+}
+
+function requireUser(req, res, next) {
+  const userKey = getUserKey(req)
+
+  if (!userKey) {
+    res.status(400).json({ message: 'User key is required.' })
+    return
+  }
+
+  req.userKey = userKey
+  next()
+}
+
+async function getStats(userKey) {
   const result = await pool.query(`
     SELECT
       COUNT(*)::int AS total,
       COUNT(*) FILTER (WHERE done)::int AS done,
       COALESCE(SUM(minutes) FILTER (WHERE done), 0)::int AS minutes
     FROM tasks
-  `)
+    WHERE user_key = $1
+  `, [userKey])
 
   return result.rows[0]
 }
@@ -53,10 +76,15 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' })
 })
 
-app.get('/api/tasks', async (_req, res, next) => {
+app.use('/api/tasks', requireUser)
+
+app.get('/api/tasks', async (req, res, next) => {
   try {
-    const taskResult = await pool.query('SELECT * FROM tasks ORDER BY due_date ASC, created_at DESC')
-    const stats = await getStats()
+    const taskResult = await pool.query(
+      'SELECT * FROM tasks WHERE user_key = $1 ORDER BY due_date ASC, created_at DESC',
+      [req.userKey],
+    )
+    const stats = await getStats(req.userKey)
     res.json({ tasks: taskResult.rows.map(mapTask), stats })
   } catch (error) {
     next(error)
@@ -72,10 +100,10 @@ app.post('/api/tasks', async (req, res, next) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO tasks (title, subject, due_date, minutes)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO tasks (user_key, title, subject, due_date, minutes)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [title, subject, dueDate, Number(minutes)],
+      [req.userKey, title, subject, dueDate, Number(minutes)],
     )
 
     res.status(201).json({ task: mapTask(result.rows[0]) })
@@ -88,8 +116,8 @@ app.patch('/api/tasks/:id', async (req, res, next) => {
   try {
     const { done } = req.body
     const result = await pool.query(
-      'UPDATE tasks SET done = $1 WHERE id = $2 RETURNING *',
-      [Boolean(done), req.params.id],
+      'UPDATE tasks SET done = $1 WHERE id = $2 AND user_key = $3 RETURNING *',
+      [Boolean(done), req.params.id, req.userKey],
     )
 
     if (result.rowCount === 0) {
@@ -104,7 +132,15 @@ app.patch('/api/tasks/:id', async (req, res, next) => {
 
 app.delete('/api/tasks/:id', async (req, res, next) => {
   try {
-    await pool.query('DELETE FROM tasks WHERE id = $1', [req.params.id])
+    const result = await pool.query(
+      'DELETE FROM tasks WHERE id = $1 AND user_key = $2',
+      [req.params.id, req.userKey],
+    )
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Task not found.' })
+    }
+
     res.status(204).end()
   } catch (error) {
     next(error)

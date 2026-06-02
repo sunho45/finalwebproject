@@ -9,6 +9,15 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean)
+let dbReadyPromise = initDb()
+  .then(() => {
+    console.log('Database initialized')
+    return true
+  })
+  .catch((error) => {
+    console.error('Database initialization failed', error)
+    return false
+  })
 
 app.disable('x-powered-by')
 app.use(cors({
@@ -67,14 +76,40 @@ async function getStats(userKey) {
   return result.rows[0]
 }
 
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' })
+async function ensureDbReady() {
+  if (await dbReadyPromise) {
+    return
+  }
+
+  dbReadyPromise = initDb()
+    .then(() => {
+      console.log('Database initialized')
+      return true
+    })
+    .catch((error) => {
+      console.error('Database initialization failed', error)
+      return false
+    })
+
+  if (!(await dbReadyPromise)) {
+    throw new Error('Database is not ready.')
+  }
+}
+
+app.get('/api/health', async (_req, res) => {
+  try {
+    await ensureDbReady()
+    res.json({ status: 'ok', database: 'ok' })
+  } catch {
+    res.status(503).json({ status: 'error', database: 'not-ready' })
+  }
 })
 
 app.use('/api/tasks', requireUser)
 
 app.get('/api/tasks', async (req, res, next) => {
   try {
+    await ensureDbReady()
     const taskResult = await pool.query(
       'SELECT * FROM tasks WHERE user_key = $1 ORDER BY due_date ASC, created_at DESC',
       [req.userKey],
@@ -88,6 +123,7 @@ app.get('/api/tasks', async (req, res, next) => {
 
 app.post('/api/tasks', async (req, res, next) => {
   try {
+    await ensureDbReady()
     const { title, subject, dueDate, minutes } = req.body
 
     if (!title || !subject || !dueDate || !Number(minutes)) {
@@ -109,6 +145,7 @@ app.post('/api/tasks', async (req, res, next) => {
 
 app.patch('/api/tasks/:id', async (req, res, next) => {
   try {
+    await ensureDbReady()
     const { done } = req.body
     const result = await pool.query(
       'UPDATE tasks SET done = $1 WHERE id = $2 AND user_key = $3 RETURNING *',
@@ -127,6 +164,7 @@ app.patch('/api/tasks/:id', async (req, res, next) => {
 
 app.delete('/api/tasks/:id', async (req, res, next) => {
   try {
+    await ensureDbReady()
     const result = await pool.query(
       'DELETE FROM tasks WHERE id = $1 AND user_key = $2',
       [req.params.id, req.userKey],
@@ -149,12 +187,4 @@ app.use((error, _req, res, _next) => {
 
 app.listen(port, () => {
   console.log(`Planner API listening on ${port}`)
-
-  initDb()
-    .then(() => {
-      console.log('Database initialized')
-    })
-    .catch((error) => {
-      console.error('Database initialization failed', error)
-    })
 })

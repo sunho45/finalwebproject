@@ -103,7 +103,8 @@ export default function App() {
     })
 
     if (!response.ok) {
-      throw new Error('API request failed')
+      const detail = await response.json().catch(() => ({}))
+      throw new Error(detail.message || 'API request failed')
     }
 
     if (response.status === 204) return null
@@ -116,8 +117,8 @@ export default function App() {
       setTasks(data.tasks)
       setStats(data.stats)
       setStatus('')
-    } catch {
-      setStatus('API 서버가 아직 연결되지 않았습니다. 배포 로그와 DATABASE_URL을 확인하세요.')
+    } catch (error) {
+      setStatus(`DB 연결 또는 테이블 초기화 오류입니다. ${error.message}`)
     }
   }
 

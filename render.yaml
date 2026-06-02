@@ -6,6 +6,8 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     envVars:
+      - key: DATABASE_URL
+        sync: false
       - key: API_PORT
         value: 4000
       - key: CLIENT_ORIGIN

@@ -1,0 +1,6 @@
+internal:postgresql://postgress:BlClolQhbtNSXex1AvjtMqXBtOVs5JKz@dpg-d8dv7h0js32c73fv3n7g-a/finalproject_ivhy
+external:postgresql://postgress:BlClolQhbtNSXex1AvjtMqXBtOVs5JKz@dpg-d8dv7h0js32c73fv3n7g-a.oregon-postgres.render.com/finalproject_ivhy
+command:PGPASSWORD=BlClolQhbtNSXex1AvjtMqXBtOVs5JKz psql -h dpg-d8dv7h0js32c73fv3n7g-a.oregon-postgres.render.com -U postgress finalproject_ivhy
+password:BlClolQhbtNSXex1AvjtMqXBtOVs5JKz
+Username:postgress
+Database:finalproject_ivhy
